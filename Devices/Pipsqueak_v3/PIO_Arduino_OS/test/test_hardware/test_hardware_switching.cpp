@@ -16,7 +16,7 @@
  *   yellow and blue indicator light illumination
  */
 
-#include <Arduino.h>
+#include <ArduinoAdapter.h>
 #include <unity.h>
 
 const uint8_t ENABLE_PIN           PROGMEM = D1;
