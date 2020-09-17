@@ -42,7 +42,7 @@ class Hmac {
     void write(void * buffer);
 
     /**
-     * Compares this HMAC to another.
+     * Compares the value of this HMAC to another HMAC value.
      */
     bool equals(const byte * hmac);
 

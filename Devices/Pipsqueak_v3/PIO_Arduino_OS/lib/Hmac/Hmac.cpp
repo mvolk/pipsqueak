@@ -55,7 +55,11 @@ Hmac::Hmac(const byte * secretKey, const byte * messageContent, size_t messageCo
 }
 
 void Hmac::write(void * buffer) {
-  memcpy(buffer, state.b, length());
+  memcpy(buffer, state.b, SHA_256_HASH_LENGTH);
+}
+
+bool Hmac::equals(const byte * hmac) {
+ return memcmp(hmac, state.b, SHA_256_HASH_LENGTH) == 0;
 }
 
 size_t Hmac::length() {
