@@ -1,4 +1,4 @@
-#include <ArduinoAdapter.h>
+#include <Arduino.h>
 #include <unity.h>
 #include <Hmac.h>
 

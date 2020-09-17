@@ -14,7 +14,7 @@
 #ifndef Hmac_h
 #define Hmac_h
 
-#include <ArduinoAdapter.h>
+#include <Arduino.h>
 
 // Lengths expressed in bytes
 #define SHA_256_KEY_LENGTH 32
@@ -40,6 +40,11 @@ class Hmac {
      * The buffer's size must be at least length() bytes.
      */
     void write(void * buffer);
+
+    /**
+     * Compares this HMAC to another.
+     */
+    bool equals(const byte * hmac);
 
     /** Returns the length of the HMAC in bytes. */
     size_t length();
