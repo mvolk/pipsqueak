@@ -22,15 +22,25 @@ const uint8_t sha256InitState[] = {
   0x19, 0xcd, 0xe0, 0x5b  // H7
 };
 
+Hmac::Hmac(const byte * secretKey) {
+  memset(keyBuffer, 0, SHA_256_BLOCK_LENGTH);
+  memcpy(keyBuffer, secretKey, SHA_256_KEY_LENGTH);
+}
+
+void Hmac::generate(const byte * messageContent, size_t messageContentLength, byte * buffer) {
+  compute(messageContent, messageContentLength);
+  memcpy(buffer, state.b, SHA_256_HASH_LENGTH);
+}
+
+bool Hmac::validate(const byte * messageContent, size_t messageContentLength, const byte * hmac) {
+  compute(messageContent, messageContentLength);
+  return memcmp(hmac, state.b, SHA_256_HASH_LENGTH) == 0;
+}
+
 // This is compute-intensive and time consuming, especially for large messages, so yield
 // frequently to avoid watchdog timeouts and to keep timing-sensitive processes (e.g. the
 // wifi stack) happy
-Hmac::Hmac(const byte * secretKey, const byte * messageContent, size_t messageContentLength) {
-  memset(keyBuffer, 0, SHA_256_BLOCK_LENGTH);
-  memcpy(keyBuffer, secretKey, SHA_256_KEY_LENGTH);
-  byteCount = 0;
-  bufferOffset = 0;
-
+void Hmac::compute(const byte * messageContent, size_t messageContentLength) {
   // Start inner hash
   init();
   size_t i;
@@ -52,18 +62,6 @@ Hmac::Hmac(const byte * secretKey, const byte * messageContent, size_t messageCo
   for (i = 0; i < SHA_256_HASH_LENGTH; i++) write(innerHash[i]);
 
   padAndReverseByteOrder();
-}
-
-void Hmac::write(void * buffer) {
-  memcpy(buffer, state.b, SHA_256_HASH_LENGTH);
-}
-
-bool Hmac::equals(const byte * hmac) {
- return memcmp(hmac, state.b, SHA_256_HASH_LENGTH) == 0;
-}
-
-size_t Hmac::length() {
-  return SHA_256_HASH_LENGTH;
 }
 
 void Hmac::init(void) {
