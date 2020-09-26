@@ -1,6 +1,7 @@
 # Telemetry Protocol Library
 
-This library is a subcomponent of the [Pipsqueak Protocol library](../PipsqueakProtocol/README.md).
+This library is a subcomponent of the [PipsqueakClient library](../PipsqueakClient/README.md),
+which collectively implements the Pipsqueak Protocol.
 
 ## Useage
 
@@ -16,7 +17,7 @@ The Pipsqueak Telemetry Protocol is used for the following purposes:
 In general, observations should not be recorded until a successful [Time](../TimeProtocol/README.md)
 response is received and the device's clock is synced.
 
-Refer to the [Pipsqueak Protocol library](../PipsqueakProtocol/README.md) for general Pipsqueak
+Refer to the [PipsqueakClient library](../PipsqueakClient/README.md) for general Pipsqueak
 request/response guidance.
 
 ## Request Specification

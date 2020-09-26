@@ -10,6 +10,7 @@ PipsqueakClient::PipsqueakClient(IPAddress * host, uint16_t port, uint32_t devic
   _reportRebootRequest(deviceID, hmac),
   _requestQueueDepth { 0 },
   _requestQueueCursor { 0 },
+  _wiFiConnectionEstablished { false },
   _client(),
   _request { NULL },
   _response { NULL },
@@ -28,20 +29,32 @@ PipsqueakClient::PipsqueakClient(IPAddress * host, uint16_t port, uint32_t devic
 }
 
 void PipsqueakClient::setup() {
+  // Register ISR callbacks
   _client.onConnect([](void * networkClient, AsyncClient * asyncClient) { ((PipsqueakClient *) networkClient)->onConnect(); }, this);
   _client.onData([](void * networkClient, AsyncClient * asyncClient, void * data, size_t len) { ((PipsqueakClient *) networkClient)->onData(data, len); }, this);
   _client.onError([](void * networkClient, AsyncClient * asyncClient, uint8_t error) { ((PipsqueakClient *) networkClient)->onError(error); }, this);
   _client.onTimeout([](void * networkClient, AsyncClient * asyncClient, uint32_t time) { ((PipsqueakClient *) networkClient)->onTimeout(time); }, this);
   _client.onDisconnect([](void * networkClient, AsyncClient * asyncClient) { ((PipsqueakClient *) networkClient)->onDisconnect(); }, this);
+
+  // Always issue a TimeRequest first to establish clock sync
+  enqueue(&_timeRequest);
 }
 
 void PipsqueakClient::loop() {
+  // Don't do anything until the WiFi connection is initially established
+  if (!_wiFiConnectionEstablished) {
+    if (!WiFi.isConnected()) return;
+    _wiFiConnectionEstablished = true;
+  }
+
   if (_transmitting && _response->isComplete()) {
     #ifdef DEBUG_PIPSQUEAK_CLIENT
     Serial.println("PipsqueakClient.loop(): response complete/ready");
     #endif
     endSession();
   }
+
+  bool clockSyncIsRequired = false;
 
   if (_disconnected) {
     if (_disconnecting) {
@@ -95,6 +108,8 @@ void PipsqueakClient::loop() {
     _disconnected = false;
     if (_response != NULL) {
       _response->ready(now() - _request->getTimestamp());
+      synchronizeClock();
+      clockSyncIsRequired = clockSyncRequired();
       _response = NULL;
     }
     if (_request != NULL) {
@@ -112,14 +127,23 @@ void PipsqueakClient::loop() {
     transmit();
   }
 
-  if (_request == NULL && _requestQueueDepth > 0) {
-    #ifdef DEBUG_PIPSQUEAK_CLIENT
-    Serial.println("PipsqueakClient.loop(): staging the next request for transmission");
-    #endif
-    _request = _requestQueue[_requestQueueCursor];
-    _response = _request->getResponse();
-    _requestQueueCursor = (_requestQueueCursor + 1) % REQUEST_QUEUE_DEPTH;
-    _requestQueueDepth -= 1;
+  if (_request == NULL) {
+    if (clockSyncIsRequired) {
+      #ifdef DEBUG_PIPSQUEAK_CLIENT
+      Serial.println("PipsqueakClient.loop(): staging a TimeRequest for transmission");
+      #endif
+      _timeRequest.reset();
+      _request = &_timeRequest;
+      _response = _request->getResponse();
+    } else if (_requestQueueDepth > 0) {
+      #ifdef DEBUG_PIPSQUEAK_CLIENT
+      Serial.println("PipsqueakClient.loop(): staging the next request for transmission");
+      #endif
+      _request = _requestQueue[_requestQueueCursor];
+      _response = _request->getResponse();
+      _requestQueueCursor = (_requestQueueCursor + 1) % REQUEST_QUEUE_DEPTH;
+      _requestQueueDepth -= 1;
+    }
   }
 
   if (!_busy && _request != NULL) {
@@ -249,4 +273,44 @@ void PipsqueakClient::endSession() {
  _transmitting = false;
   _disconnecting = true;
   _client.close(true);
+}
+
+void PipsqueakClient::synchronizeClock() {
+  if (_response == NULL) return;
+  if (_response->hasErrors()) return;
+  if (_response->getElapsedTime() > 1) {
+    #ifdef DEBUG_PIPSQUEAK_CLIENT
+    Serial.printf("PipsqueakClient.synchronizeClock(): %lu seconds elapsed\n", _response->getElapsedTime());
+    #endif
+    return;
+  }
+  #ifdef DEBUG_PIPSQUEAK_CLIENT
+  Serial.printf("PipsqueakClient.synchronizeClock(): success @ %lu\n", _response->getTimestamp());
+  #endif
+  setTime(_response->getTimestamp());
+}
+
+bool PipsqueakClient::clockSyncRequired() {
+  if (_response == NULL) return false;
+  if (_request == &_timeRequest && _response->hasErrors()) return true;
+
+  for (size_t i = 0; i < _response->errorCount(); i++) {
+    if (_response->getErrorType(i) != ErrorType::Pipsqueak) {
+      continue;
+    }
+
+    // Either of these two errors indicate that the clocks are out of sync
+    int8_t code = _response->getErrorCode(i);
+    if (
+      code == REQUEST_ERROR_CLOCK_SYNC_BEHIND ||
+      code == REQUEST_ERROR_CLOCK_SYNC_AHEAD
+    ) {
+      return true;
+    }
+  }
+
+  // If neither clock sync errors are present, clocks are either sufficiently
+  // in sync, or a problem bigger than clock sync (for example, network
+  // connectivity) is preventing determination of synchronicity.
+  return false;
 }

@@ -1,6 +1,7 @@
 # Reboot Protocol Library
 
-This library is a subcomponent of the [Pipsqueak Protocol library](../PipsqueakProtocol/README.md).
+This library is a subcomponent of the [PipsqueakClient library](../PipsqueakClient/README.md),
+which collectively implements the Pipsqueak Protocol.
 
 ## Usage
 
@@ -20,7 +21,7 @@ is zero ([`rst_reason::REASON_DEFAULT_RST`](https://github.com/esp8266/Arduino/b
 For exceptional reboots, the `reason` string supplied should be formatted in a manner compatible
 with the esp8266 exception decoder.
 
-Refer to the [Pipsqueak Protocol library](../PipsqueakProtocol/README.md) for general Pipsqueak
+Refer to the [PipsqueakClient library](../PipsqueakClient/README.md) for general Pipsqueak
 request/response guidance.
 
 ## Security

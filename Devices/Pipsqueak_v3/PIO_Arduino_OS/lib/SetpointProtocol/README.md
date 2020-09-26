@@ -1,6 +1,7 @@
 # Setpoint Protocol Library
 
-This library is a subcomponent of the [Pipsqueak Protocol library](../PipsqueakProtocol/README.md).
+This library is a subcomponent of the [PipsqueakClient library](../PipsqueakClient/README.md),
+which collectively implements the Pipsqueak Protocol.
 
 ## Usage
 
@@ -11,7 +12,7 @@ server. Upon updating the setpoint, the new setpoint is reported via the
 Responses may additionally be used to aid in keeping the device's clock in sync with the server's
 clock.
 
-Refer to the [Pipsqueak Protocol library](../PipsqueakProtocol/README.md) for general Pipsqueak
+Refer to the [PipsqueakClient library](../PipsqueakClient/README.md) for general Pipsqueak
 request/response guidance.
 
 ## Request Specification

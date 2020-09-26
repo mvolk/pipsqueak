@@ -39,6 +39,12 @@ class PipsqueakClient {
      * Returns a pointer to the TimeRequest singleton held by
      * the client. Also used to access the response via
      * Request::getResponse().
+     *
+     * Note that the PipsqueakClient has an internal clock
+     * synchronization mechanism that automatically issues
+     * time requests as needed. Application code should not
+     * need access to this request and need not enqueue these
+     * requests.
      */
     TimeRequest * getTimeRequest();
 
@@ -46,6 +52,14 @@ class PipsqueakClient {
      * Returns a pointer to the SetpointRequest singleton held by
      * the client. Also used to access the response via
      * Request::getResponse().
+     *
+     * Optionally invoke setReboot() on this request before enqueueing
+     * it for transmission.
+     *
+     * Note that this request can be replaced with a
+     * ReportRebootRequest coupled with a TelemetryRequest. The
+     * former provides reboot data to the server, while the latter
+     * obtains a setpoint from the server.
      */
     SetpointRequest * getSetpointRequest();
 
@@ -53,6 +67,9 @@ class PipsqueakClient {
      * Returns a pointer to the TelemetryRequest singleton held by
      * the client. Also used to access the response via
      * Request::getResponse().
+     *
+     * Note that this request cannot be sent "empty" - e.g. without
+     * any events added to it.
      */
     TelemetryRequest * getTelemetryRequest();
 
@@ -60,6 +77,10 @@ class PipsqueakClient {
      * Returns a pointer to the ReportRebootRequest singleton held by
      * the client. Also used to access the response via
      * Request::getResponse().
+     *
+     * Invoke either reportNormalReboot() or
+     * reportExceptionalReboot(const char *) before enqueing this
+     * request.
      */
     ReportRebootRequest * getReportRebootRequest();
 
@@ -81,6 +102,7 @@ class PipsqueakClient {
     size_t _requestQueueCursor;
     IPAddress _host;
     uint16_t _port;
+    bool _wiFiConnectionEstablished;
     AsyncClient _client;
     Request * _request;
     Response * _response;
@@ -102,6 +124,8 @@ class PipsqueakClient {
     void onTimeout(uint32_t time);
     void onDisconnect();
     void endSession();
+    void synchronizeClock();
+    bool clockSyncRequired();
 };
 
 #endif // PipsqueakClient_h

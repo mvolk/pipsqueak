@@ -1,6 +1,7 @@
 # Time Protocol Library
 
-This library is a subcomponent of the [Pipsqueak Protocol library](../PipsqueakProtocol/README.md).
+This library is a subcomponent of the [PipsqueakClient library](../PipsqueakClient/README.md),
+which collectively implements the Pipsqueak Protocol.
 
 ## Useage
 
@@ -10,7 +11,7 @@ the device's clock with the server.
 Devices are expected to utilize this protocol with relative infrequency. In general, this protocol
 should be used only upon boot-up and when clock drift is detected.
 
-Refer to the [Pipsqueak Protocol library](../PipsqueakProtocol/README.md) for general Pipsqueak
+Refer to the [PipsqueakClient library](../PipsqueakClient/README.md) for general Pipsqueak
 request/response guidance.
 
 ## Request Specification
