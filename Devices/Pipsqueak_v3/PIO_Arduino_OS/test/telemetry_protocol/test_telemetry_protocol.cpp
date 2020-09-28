@@ -33,13 +33,21 @@ void test_constructor() {
 
 void test_ready() {
   TelemetryRequest * subject = new TelemetryRequest(DEVICE_ID, new Hmac((const byte *) &SECRET_KEY));
-  subject->addSetpointEvent(MOCK_NOW - 5, 15.000);
-  subject->addTemperatureEvent(MOCK_NOW - 5, 15.625);
-  subject->addChillerEvent(MOCK_NOW - 4, 1, 1);
-  subject->addTemperatureEvent(MOCK_NOW - 3, 14.5);
-  subject->addHeaterEvent(MOCK_NOW - 3, 1, 30, 1);
-  subject->addTemperatureEvent(MOCK_NOW - 2, 15.000);
-  subject->addErrorEvent(MOCK_NOW - 1, ErrorType::TcpStack, NETWORK_ERROR_TIMEOUT);
+  StatusEvent * statusEvent = new StatusEvent();
+  statusEvent->temperatureSetpoint(MOCK_NOW - 5, 15.000);
+  subject->addStatusEvent(statusEvent);
+  statusEvent->temperatureObservation(MOCK_NOW - 5, 15.625);
+  subject->addStatusEvent(statusEvent);
+  statusEvent->chillerPulse(MOCK_NOW - 4, 1, 1);
+  subject->addStatusEvent(statusEvent);
+  statusEvent->temperatureObservation(MOCK_NOW - 3, 14.5);
+  subject->addStatusEvent(statusEvent);
+  statusEvent->heaterPulse(MOCK_NOW - 3, 1, 30, 1);
+  subject->addStatusEvent(statusEvent);
+  statusEvent->temperatureObservation(MOCK_NOW - 2, 15.000);
+  subject->addStatusEvent(statusEvent);
+  statusEvent->error(MOCK_NOW - 1, ErrorType::TcpStack, NETWORK_ERROR_TIMEOUT);
+  subject->addStatusEvent(statusEvent);
   subject->ready(MOCK_NOW, CHALLENGE);
   TEST_ASSERT_TRUE(subject->isPopulated());
   TEST_ASSERT_TRUE(subject->isInFlight());
@@ -76,13 +84,21 @@ void test_ready() {
 
 void test_reset() {
   TelemetryRequest * subject = new TelemetryRequest(DEVICE_ID, new Hmac((const byte *) &SECRET_KEY));
-  subject->addSetpointEvent(MOCK_NOW - 5, 15.000);
-  subject->addTemperatureEvent(MOCK_NOW - 5, 15.625);
-  subject->addChillerEvent(MOCK_NOW - 4, 1, 1);
-  subject->addTemperatureEvent(MOCK_NOW - 3, 14.5);
-  subject->addHeaterEvent(MOCK_NOW - 3, 1, 30, 1);
-  subject->addTemperatureEvent(MOCK_NOW - 2, 15.000);
-  subject->addErrorEvent(MOCK_NOW - 1, ErrorType::TcpStack, NETWORK_ERROR_TIMEOUT);
+  StatusEvent * statusEvent = new StatusEvent();
+  statusEvent->temperatureSetpoint(MOCK_NOW - 5, 15.000);
+  subject->addStatusEvent(statusEvent);
+  statusEvent->temperatureObservation(MOCK_NOW - 5, 15.625);
+  subject->addStatusEvent(statusEvent);
+  statusEvent->chillerPulse(MOCK_NOW - 4, 1, 1);
+  subject->addStatusEvent(statusEvent);
+  statusEvent->temperatureObservation(MOCK_NOW - 3, 14.5);
+  subject->addStatusEvent(statusEvent);
+  statusEvent->heaterPulse(MOCK_NOW - 3, 1, 30, 1);
+  subject->addStatusEvent(statusEvent);
+  statusEvent->temperatureObservation(MOCK_NOW - 2, 15.000);
+  subject->addStatusEvent(statusEvent);
+  statusEvent->error(MOCK_NOW - 1, ErrorType::TcpStack, NETWORK_ERROR_TIMEOUT);
+  subject->addStatusEvent(statusEvent);
   subject->ready(MOCK_NOW, CHALLENGE);
   subject->reset();
   TEST_ASSERT_FALSE(subject->isPopulated());
@@ -95,13 +111,21 @@ void test_reset() {
 
 void test_failed() {
   TelemetryRequest * subject = new TelemetryRequest(DEVICE_ID, new Hmac((const byte *) &SECRET_KEY));
-  subject->addSetpointEvent(MOCK_NOW - 5, 15.000);
-  subject->addTemperatureEvent(MOCK_NOW - 5, 15.625);
-  subject->addChillerEvent(MOCK_NOW - 4, 1, 1);
-  subject->addTemperatureEvent(MOCK_NOW - 3, 14.5);
-  subject->addHeaterEvent(MOCK_NOW - 3, 1, 30, 1);
-  subject->addTemperatureEvent(MOCK_NOW - 2, 15.000);
-  subject->addErrorEvent(MOCK_NOW - 1, ErrorType::TcpStack, NETWORK_ERROR_TIMEOUT);
+  StatusEvent * statusEvent = new StatusEvent();
+  statusEvent->temperatureSetpoint(MOCK_NOW - 5, 15.000);
+  subject->addStatusEvent(statusEvent);
+  statusEvent->temperatureObservation(MOCK_NOW - 5, 15.625);
+  subject->addStatusEvent(statusEvent);
+  statusEvent->chillerPulse(MOCK_NOW - 4, 1, 1);
+  subject->addStatusEvent(statusEvent);
+  statusEvent->temperatureObservation(MOCK_NOW - 3, 14.5);
+  subject->addStatusEvent(statusEvent);
+  statusEvent->heaterPulse(MOCK_NOW - 3, 1, 30, 1);
+  subject->addStatusEvent(statusEvent);
+  statusEvent->temperatureObservation(MOCK_NOW - 2, 15.000);
+  subject->addStatusEvent(statusEvent);
+  statusEvent->error(MOCK_NOW - 1, ErrorType::TcpStack, NETWORK_ERROR_TIMEOUT);
+  subject->addStatusEvent(statusEvent);
   subject->ready(MOCK_NOW, CHALLENGE);
   subject->failed();
   TEST_ASSERT_TRUE(subject->isPopulated());
@@ -114,7 +138,9 @@ void test_failed() {
 
 void test_response() {
   TelemetryRequest * subject = new TelemetryRequest(DEVICE_ID, new Hmac((const byte *) &SECRET_KEY));
-  subject->addSetpointEvent(MOCK_NOW - 5, 15.000);
+  StatusEvent * statusEvent = new StatusEvent();
+  statusEvent->temperatureSetpoint(MOCK_NOW - 5, 15.000);
+  subject->addStatusEvent(statusEvent);
   subject->ready(MOCK_NOW, CHALLENGE);
   TEST_ASSERT_TRUE(subject->getResponse()->isInUse());
   byte response[64] = {

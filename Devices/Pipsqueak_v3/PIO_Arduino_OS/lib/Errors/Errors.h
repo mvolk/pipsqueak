@@ -86,4 +86,23 @@ enum ErrorType { None = 0, Pipsqueak = 1, TcpStack = 2 };
 // The challenge response from the server did not match the challenge in the request
 #define RESPONSE_ERROR_CHALLENGE_FAILED 36
 
+// Device Error Codes  ////////////////////////////////////////////////////////////////////////////
+// Indicate hardware, software or state errors
+// Use values between 64 and 96
+
+// Clock isn't synchronized
+#define CLOCK_SYNC_ERROR 65
+// Board sensor not detected
+#define BOARD_SENSOR_DETECTION_ERROR 66
+// Remote sensor not detected
+#define REMOTE_SENSOR_DETECTION_ERROR 67
+// Board temperature exceeds limit
+#define DEVICE_OVERHEATED_ERROR 68
+// Unable to acquire board temperature
+#define BOARD_TEMPERATURE_NAN_ERROR 69
+// Unable to acquire remote temperature
+#define REMOTE_TEMPERATURE_NAN_ERROR 70
+// WiFi connection failure
+#define WIFI_CONNECTION_ERROR 71
+
 #endif // Errors_h

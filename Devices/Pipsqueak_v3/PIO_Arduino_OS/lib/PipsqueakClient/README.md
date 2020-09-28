@@ -21,6 +21,9 @@ the following component libraries:
 * [TelemetryProtocol.h](./lib/TelemetryProtocol/README.md) - defines the
   TelemetryRequest and TelemetryResponse classes
 
+The [PipsqueakClient](./PipsqueakClient.h) class abstracts away all the complexity, and in coordination
+with [PipsqueakState](../PipsqueakState/README.md), boils the work down to setup() and loop() calls.
+
 ## General Specification
 
 Each server will be reachable via a static IPv4 address and port number. Each request-response pair is
@@ -82,94 +85,33 @@ detail.
 
 ## Usage
 
-Classes supplied in this implementation are designed for static memory allocation and entirely avoid
-dynamic allocation. Each instance is expected to be re-used, and request-response cycles are expected
-to be sequential rather than parallel.
-
-### Boilerplate
+Instantiate one instance and call it's setup() and loop() methods as illustrated below. The client
+class will take care of connecting to WiFi, synchronizing the system clock, requesting the setpoint,
+reporting the reboot reason, sending telemetry requests to the server, and recording error status
+events when things go wrong.
 
 ``` cpp
 #include <Arduino.h>
-#include <ESP8266WiFi.h>
+#include <PipsqueakState.h>
 #include <PipsqueakClient.h>
 #include <Hmac.h>
 
-// Device-specific values for demonstration purposes only:
-uint32_t deviceID = 1;
-byte secretKey[32] = {
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-};
-IPAddress host(127, 0, 0, 1);
-uint16_t port = 9001;
-Hmac hmac(secretKey);
-PipsqueakClient client(&host, port, deviceID, &hmac);
+PipsqueakState * state;
+PipsqueakClient * client;
 
 void setup() {
-  // code here - before or after client.setup() - to connect WiFi
-  client.setup();
+  state = new PipsqueakState();
+  state->setup();
+
+  Hmac * hmac = new Hmac(state.getConfig()->getSecretKey());
+
+  client = new PipsqueakClient(state, hmac);
+  client->setup();
 }
 
 void loop() {
-  client.loop();
-
-  // code here to build and send requests and to process responses
-}
-```
-
-### Send a Request
-
-``` cpp
-void sendSetpointRequest(bool isReboot) {
-  // Obtain pointers to singleton Request instances from the client
-  SetpointRequest * request = client.getSetpointRequest();
-
-  // Don't reconfigure requests that are currently being sent
-  if (!request.isInFlight()) {
-    // Populate the request, as and if required
-    // Watch for bool return values that indicate that the request
-    // cannot accept additional data.
-    if (isReboot) request->setReboot();
-    // Enqueue the request to be transmitted
-    client.enqueue(request);
-  }
-}
-```
-
-### Process a Response
-
-``` cpp
-void handleSetpointResponse(bool retryOnFailure) {
-  // Obtain pointers to singleton Response instances from the client's
-  // singleton Request instances
-  SetpointResponse * response = client.getSetpointRequest()->getSetpointResponse();
-
-  // Wait until the response is ready
-  if (!response->isReady()) return;
-
-  // Check for errors - if they exist, the response content is unreliable
-  if (response->hasErrors()) {
-    // Do something with errors if desired - example below
-    for (size_t i = 0; i < response->errorCount(); i++) {
-      ErrorType type = response->getErrorType(i);
-      int8_t code = response->getErrorCode(i);
-      Serial.sprintf("Error code %d of type %d\n", code, type);
-    }
-    // Optionally retry
-    if (retryOnFailure) {
-      SetpointRequest * request = client.getSetpointRequest();
-      request->failed();
-      client.enqueue(request);
-    }
-  } else {
-    // Pseudocode example - you supply an updateSetpoint(float) implementation
-    // in this case, but the general idea is that some responses bear information
-    // that you'll want to use in your application code
-    float desiredSetpoint = response->getSetpoint();
-    updateSetpoint(desiredSetpoint);
-  }
+  state->loop();
+  client->loop();
 }
 ```
 

@@ -1,9 +1,28 @@
 #include <Arduino.h>
+#include <PipsqueakState.h>
+#include <Hmac.h>
+#include <PipsqueakClient.h>
+
+Hmac * hmac;
+PipsqueakState * state;
+PipsqueakClient * client;
 
 void setup() {
-  // put your setup code here, to run once:
+  Serial.begin(57600);
+  delay(1000);
+  Serial.println();
+
+  state = new PipsqueakState();
+
+  state->setup();
+
+  hmac = new Hmac(state->getConfig()->getSecretKey());
+
+  client = new PipsqueakClient(state, hmac);
+  client->setup();
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
+  state->loop();
+  client->loop();
 }

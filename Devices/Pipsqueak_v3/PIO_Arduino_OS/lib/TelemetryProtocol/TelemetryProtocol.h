@@ -24,6 +24,9 @@
 #define STATUS_EVENT_ERROR_TYPE_OFFSET 5
 #define STATUS_EVENT_ERROR_CODE_OFFSET 6
 
+// Uncomment for detailed debug statements
+// #define DEBUG_TELEMETRY_PROTOCOL true
+
 /**
  * Helper class that builds various event types in the
  * proper format for the request and writes the raw
@@ -31,36 +34,66 @@
  *
  * Instances are designed to be re-used.
  * Not thread safe. Not ISR safe.
- *
- * Built for use within the Request class.
  */
 class StatusEvent {
   public:
     StatusEvent();
 
-    /** See Request.addTemperatureEvent(uint32_t, float) */
+    /**
+     * Configures this event as a temperature observation event.
+     *
+     * timestamp: the Unix timestamp of the observation
+     * temperature: the observed temperature in Celsius
+     */
     void temperatureObservation(uint32_t timestamp, float temperature);
 
-    /** See Request.addSetpointEvent(uint32_t, float) */
+    /**
+     * Configures this event as a setpoint change event.
+     *
+     * timestamp: the Unix timestamp of the observation
+     * temperature: the new setpoint in Celsius
+     */
     void temperatureSetpoint(uint32_t timestamp, float temperature);
 
-    /** See Request.addErrorEvent(uint32_t, ErrorType, int8_t) */
+    /**
+     * Configures this event as an error event.
+     *
+     * timestamp: the Unix timestamp of the error
+     * errorType: the type of error being reported
+     * errorCode: the error code, unique among errors of the given type
+     */
     void error(
       uint32_t timestamp,
       ErrorType errorType,
       int8_t errorCode
     );
 
-    /** See Request.addHeaterEvent(uint32_t, uint32_t, uint8_t, uint32_t) */
-    void heaterCycle(
+     /**
+     * Configures this event as a heater pulse event.
+     *
+     * timestamp: the Unix timestamp at the beginning of the cycle
+     * pulseDuration: how many milliseconds the heater will be on
+     * percentPower: the percentage (0-100) of time that the heater
+     *               will be powered during the pulse
+     * recoveryDuration: how many milliseconds the heater and chiller
+     *                   will remain off at the end of the pulse
+     */
+    void heaterPulse(
       uint32_t timestamp,
       uint32_t pulseDuration,
       uint8_t percentPower,
       uint32_t recoveryDuration
     );
 
-    /** See Request.addChillerEvent(uint32_t, uint32_t, uint32_t) */
-    void chillerCycle(
+    /**
+     * Sets up this event as a chiller cycle reporting event.
+     *
+     * timestamp: the Unix timestamp at the beginning of the cycle
+     * pulseDuration: how many milliseconds the chiller will be on
+     * recoveryDuration: how many milliseconds the heater and chiller
+     *                   will remain off at the end of the pulse
+     */
+   void chillerPulse(
       uint32_t timestamp,
       uint32_t pulseDuration,
       uint32_t recoveryDuration
@@ -69,9 +102,15 @@ class StatusEvent {
     /**
      * Writes the current event state to a buffer in the appropriate
      * 16-byte layout called out by the telemetry protocol for the
-     * current event type. Intended for use by the Request class.
+     * current event type.
      */
     void write(byte * buffer);
+
+    /**
+     * Reads the current event state from a 16-byte buffer laid out
+     * as specified by the telemetry protocol.
+     */
+    void read(const byte * buffer);
 
   private:
     byte _payload[STATUS_EVENT_SIZE];
@@ -140,76 +179,22 @@ class TelemetryRequest: public Request {
     void reset();
 
     /**
-     * Adds a temperature observation event to the request if possible.
+     * Adds a status event to the request if possible.
      *
-     * timestamp: the Unix timestamp of the observation
-     * temperature: the observed temperature in Celsius
+     * statusEvent: the event to add
      *
-     * Returns true if the event could be added, false otherwise.
+     * Returns true if the event has been copied to the request's
+     * internal buffer; false otherwise.
      */
-    bool addTemperatureEvent(uint32_t timestamp, float temperature);
+    bool addStatusEvent(StatusEvent * statusEvent);
 
     /**
-     * Sets up this event as a setpoint report event. Such an
-     * event might be created upon bootup to report the current
-     * setpoint, or upon change of setpoint.
+     * Indicates whether the request can accept additional
+     * status events.
      *
-     * timestamp: the Unix timestamp of the observation
-     * temperature: the setpoint as of the timestamp
-     *
-     * Returns true if the event could be added, false otherwise.
+     * Returns true if additional status events can be accepted.
      */
-    bool addSetpointEvent(uint32_t timestamp, float temperature);
-
-    /**
-     * Sets up this event as an error reporting event.
-     *
-     * timestamp: the Unix timestamp of the error
-     * errorType: the type of error being reported
-     * errorCode: the error code, unique among errors of the given type
-     *
-     * Returns true if the event could be added, false otherwise.
-     */
-    bool addErrorEvent(
-      uint32_t timestamp,
-      ErrorType errorType,
-      int8_t errorCode
-    );
-
-    /**
-     * Sets up this event as a heater cycle reporting event.
-     *
-     * timestamp: the Unix timestamp at the beginning of the cycle
-     * pulseDuration: how many milliseconds the heater will be on
-     * percentPower: the percentage (0-100) of time that the heater
-     *               will be powered during the pulse
-     * recoveryDuration: how many milliseconds the heater and chiller
-     *                   will remain off at the end of the pulse
-     *
-     * Returns true if the event could be added, false otherwise.
-     */
-    bool addHeaterEvent(
-      uint32_t timestamp,
-      uint32_t pulseDuration,
-      uint8_t percentPower,
-      uint32_t recoveryDuration
-    );
-
-    /**
-     * Sets up this event as a chiller cycle reporting event.
-     *
-     * timestamp: the Unix timestamp at the beginning of the cycle
-     * pulseDuration: how many milliseconds the chiller will be on
-     * recoveryDuration: how many milliseconds the heater and chiller
-     *                   will remain off at the end of the pulse
-     *
-     * Returns true if the event could be added, false otherwise.
-     */
-    bool addChillerEvent(
-      uint32_t timestamp,
-      uint32_t pulseDuration,
-      uint32_t recoveryDuration
-    );
+    bool isReadyForMoreEvents();
 
     /** See Request.getSize() */
     size_t getSize();
@@ -225,8 +210,6 @@ class TelemetryRequest: public Request {
     StatusEvent _statusEvent;
     uint8_t _eventCount;
     TelemetryResponse _response;
-
-    bool addEvent();
 };
 
 #endif // TelemetryProtocol_h

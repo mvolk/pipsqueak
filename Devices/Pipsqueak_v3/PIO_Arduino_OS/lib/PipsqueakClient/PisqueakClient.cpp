@@ -2,12 +2,16 @@
 #include <ESP8266WiFi.h>
 #include <TimeLib.h>
 
-PipsqueakClient::PipsqueakClient(IPAddress * host, uint16_t port, uint32_t deviceID, Hmac * hmac)
+extern "C" {
+  #include <user_interface.h>
+}
+
+PipsqueakClient::PipsqueakClient(PipsqueakState * pipsqueakState, Hmac * hmac)
 :
-  _timeRequest(deviceID, hmac),
-  _setpointRequest(deviceID, hmac),
-  _telemetryRequest(deviceID, hmac),
-  _reportRebootRequest(deviceID, hmac),
+  _timeRequest(pipsqueakState->getConfig()->getDeviceID(), hmac),
+  _setpointRequest(pipsqueakState->getConfig()->getDeviceID(), hmac),
+  _telemetryRequest(pipsqueakState->getConfig()->getDeviceID(), hmac),
+  _reportRebootRequest(pipsqueakState->getConfig()->getDeviceID(), hmac),
   _requestQueueDepth { 0 },
   _requestQueueCursor { 0 },
   _wiFiConnectionEstablished { false },
@@ -24,8 +28,7 @@ PipsqueakClient::PipsqueakClient(IPAddress * host, uint16_t port, uint32_t devic
   _disconnecting { false },
   _disconnected { false }
 {
-  _host = *host;
-  _port = port;
+  _state = pipsqueakState;
 }
 
 void PipsqueakClient::setup() {
@@ -38,6 +41,16 @@ void PipsqueakClient::setup() {
 
   // Always issue a TimeRequest first to establish clock sync
   enqueue(&_timeRequest);
+
+  // Then issue a report reboot request and setpoint request
+  prepareReportRebootRequest();
+  enqueue(&_reportRebootRequest);
+  _setpointRequest.setReboot();
+  enqueue(&_setpointRequest);
+
+  // Initiate WiFi connection
+  WiFi.begin(_state->getConfig()->getWifiSSID(), _state->getConfig()->getWifiPassword());
+  WiFi.setAutoReconnect(true);
 }
 
 void PipsqueakClient::loop() {
@@ -74,7 +87,7 @@ void PipsqueakClient::loop() {
 
     if (_errorDetected) {
       #ifdef DEBUG_PIPSQUEAK_CLIENT
-      Serial.printf("PipsqueakClient.loop(): transmission error: %d: %s\n", _errorCode, _client->errorToString(_errorCode));
+      Serial.printf("PipsqueakClient.loop(): transmission error: %d: %s\n", _errorCode, _client.errorToString(_errorCode));
       #endif
       _response->addError(ErrorType::TcpStack, _errorCode);
     }
@@ -108,8 +121,16 @@ void PipsqueakClient::loop() {
     _disconnected = false;
     if (_response != NULL) {
       _response->ready(now() - _request->getTimestamp());
+      // invoke whether errors are present or not
+      _state->recordErrors(_response);
       synchronizeClock();
       clockSyncIsRequired = clockSyncRequired();
+      if (_response->hasErrors() && _request != &_timeRequest) {
+        _request->failed();
+        enqueue(_request);
+      } else {
+        _request->reset();
+      }
       _response = NULL;
     }
     if (_request != NULL) {
@@ -118,13 +139,29 @@ void PipsqueakClient::loop() {
     _busy = false;
   }
 
-  yield();
-
   if (_connected && !_transmitting) {
     #ifdef DEBUG_PIPSQUEAK_CLIENT
     Serial.println("PipsqueakClient.loop(): client connection established");
     #endif
     transmit();
+  }
+
+  yield();
+
+  if (!_telemetryRequest.isInFlight()) {
+    size_t count = 0;
+    while (_telemetryRequest.isReadyForMoreEvents() && _state->hasStatusEvents()) {
+      _telemetryRequest.addStatusEvent(_state->dequeueStatusEvent());
+      count += 1;
+    }
+    if (count > 0) {
+      #ifdef DEBUG_PIPSQUEAK_CLIENT
+      Serial.printf("PipsqueakClient.loop(): added %u status events to TelemetryRequest\n", count);
+      Serial.println("PipsqueakClient.loop(): enqueuing a TelemetryRequest for transmission");
+      #endif
+      enqueue(&_telemetryRequest);
+      yield();
+    }
   }
 
   if (_request == NULL) {
@@ -172,6 +209,9 @@ ReportRebootRequest * PipsqueakClient::getReportRebootRequest() {
 
 bool PipsqueakClient::enqueue(Request * request) {
   if (_requestQueueDepth == REQUEST_QUEUE_DEPTH) return false;
+  for (size_t i = _requestQueueCursor; i < _requestQueueDepth; i++) {
+    if (_requestQueue[i] == request) return false;
+  }
   _requestQueue[(_requestQueueCursor + _requestQueueDepth) % REQUEST_QUEUE_DEPTH] = request;
   _requestQueueDepth += 1;
   #ifdef DEBUG_PIPSQUEAK_CLIENT
@@ -200,10 +240,11 @@ void PipsqueakClient::connect() {
     return;
   }
 
+  PipsqueakConfig * config = _state->getConfig();
   #ifdef DEBUG_PIPSQUEAK_CLIENT
-  Serial.printf("PipsqueakClient.connect(): Initiating client connection attempt to %s:%u\n", _host.toString().c_str(), _port);
+  Serial.printf("PipsqueakClient.connect(): Initiating client connection attempt to %s:%u\n", config->getHostIP()->toString().c_str(), config->getHostPort());
   #endif
-  _client.connect(_host, _port);
+  _client.connect(*(config->getHostIP()), config->getHostPort());
 }
 
 void ICACHE_RAM_ATTR PipsqueakClient::onConnect() {
@@ -285,9 +326,10 @@ void PipsqueakClient::synchronizeClock() {
     return;
   }
   #ifdef DEBUG_PIPSQUEAK_CLIENT
-  Serial.printf("PipsqueakClient.synchronizeClock(): success @ %lu\n", _response->getTimestamp());
+  Serial.printf("PipsqueakClient.synchronizeClock(): success @ %u\n", _response->getTimestamp());
   #endif
   setTime(_response->getTimestamp());
+  _state->setClockSynchronized(true);
 }
 
 bool PipsqueakClient::clockSyncRequired() {
@@ -305,6 +347,7 @@ bool PipsqueakClient::clockSyncRequired() {
       code == REQUEST_ERROR_CLOCK_SYNC_BEHIND ||
       code == REQUEST_ERROR_CLOCK_SYNC_AHEAD
     ) {
+      _state->setClockSynchronized(false);
       return true;
     }
   }
@@ -313,4 +356,36 @@ bool PipsqueakClient::clockSyncRequired() {
   // in sync, or a problem bigger than clock sync (for example, network
   // connectivity) is preventing determination of synchronicity.
   return false;
+}
+
+void PipsqueakClient::prepareReportRebootRequest() {
+  if (ESP.getResetInfoPtr()->reason == REASON_DEFAULT_RST) {
+    _reportRebootRequest.reportNormalReboot();
+    return;
+  }
+  memset(_rebootMessage, 0, REPORT_REBOOT_REQUEST_MESSAGE_SIZE_LIMIT);
+  sprintf(
+    _rebootMessage,
+    "Fatal exception:%d flag:%d (%s) epc1:0x%08x epc2:0x%08x epc3:0x%08x excvaddr:0x%08x depc:0x%08x",
+    ESP.getResetInfoPtr()->exccause,
+    ESP.getResetInfoPtr()->reason,
+    (
+      ESP.getResetInfoPtr()->reason == 1 ? "WDT" :
+      ESP.getResetInfoPtr()->reason == 2 ? "EXCEPTION" :
+      ESP.getResetInfoPtr()->reason == 3 ? "SOFT_WDT" :
+      ESP.getResetInfoPtr()->reason == 4 ? "SOFT_RESTART" :
+      ESP.getResetInfoPtr()->reason == 5 ? "DEEP_SLEEP_AWAKE" :
+      ESP.getResetInfoPtr()->reason == 6 ? "EXT_SYS_RST" :
+      "UNKNOWN"
+    ),
+    ESP.getResetInfoPtr()->epc1,
+    ESP.getResetInfoPtr()->epc2,
+    ESP.getResetInfoPtr()->epc3,
+    ESP.getResetInfoPtr()->excvaddr,
+    ESP.getResetInfoPtr()->depc
+  );
+  #ifdef DEBUG_PIPSQUEAK_CLIENT
+  Serial.printf("ReportExceptionRequest(): reset diagnostic = %s\n", _rebootMessage);
+  #endif
+  _reportRebootRequest.reportExceptionalReboot(_rebootMessage);
 }

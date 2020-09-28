@@ -17,11 +17,20 @@ to a USB port via a programmer behaves the same as a Wemos D1 Mini.
 
 ## Pipsqueak Libraries
 
-### Hmac
+### [PipsqueakConfig](./lib/PipsqueakConfig/README.md)
+
+This library reads persistant state from the EEPROM, updates that state as
+necessary, and provides an API for accessing that state.
+
+### [PipsqueakState](./lib/PipsqueakState/README.md)
+
+This library holds the emphemeral state that needs to be shared among various libraries within the Pipsqueak operating system. This library also exposes the PipsqueakConfig to the rest of the operating system.
+
+### [Hmac](./lib/Hmac/README.md)
 
 The Pipsqueak Protocol relies on SHA-256 HMACs. This library computes them.
 
-### PipsqueakClient
+### [PipsqueakClient](./lib/PipsqueakClient/README.md)
 
 Pipsqueak devices communicate with a server using a custom binary protocol over
 TCP/IP. The [PipsqueakClient](./lib/PipsqueakClient/README.md) encapsulates the
@@ -70,6 +79,11 @@ Routine (ISR) callbacks. While trickier to use correctly, this allows the OS
 to avoid blocking on requests/responses, allowing functions such as
 self-monitoring, temperature observation and temperature control to continue
 working even when network conditions cause mayhem for requests and responses.
+
+### [OneWire](https://github.com/PaulStoffregen/OneWire)
+
+Provides support for communication with DS18B20 temperature sensors via the OneWire
+protocol.
 
 ### [TimeLib.h](https://github.com/PaulStoffregen/Time)
 

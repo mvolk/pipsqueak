@@ -11,6 +11,7 @@
 #include <SetpointProtocol.h>
 #include <TelemetryProtocol.h>
 #include <RebootProtocol.h>
+#include <PipsqueakState.h>
 
 #define REQUEST_QUEUE_DEPTH 10
 
@@ -23,15 +24,34 @@
  */
 class PipsqueakClient {
   public:
-    PipsqueakClient(IPAddress * host, uint16_t _port, uint32_t deviceID, Hmac * hmac);
+    /**
+     * Constructor.
+     *
+     * The latter two constructor arguments could in fact be
+     * obtained and/or built using information in the
+     * PipsqueakState, but that information cannot be accessed
+     * until after PipsqueakState.setup() is called. Requiring
+     * these two additional parameters, then, is simply
+     * reinforcement of that requirement.
+     *
+     * The PipsqueakState instance's setup() method must be invoked
+     * prior to invoking this constructor.
+     *
+     * pipsqueakState: ptr to singleton application instance
+     * hmac: built with current device's secret key
+     */
+    PipsqueakClient(PipsqueakState * pipsqueakState, Hmac * hmac);
 
     /**
      * Invoke once in the Arduino's setup() function.
+     *
+     * Registers callbacks, enqueues the initial request sequence,
+     * and initiates the WiFi connection.
      */
     void setup();
 
     /**
-     * Invoke one or more times in the Arduino loop() function.
+     * Invoke upon each iteration of the main loop() function.
      */
     void loop();
 
@@ -93,6 +113,7 @@ class PipsqueakClient {
     bool enqueue(Request * request);
 
   private:
+    PipsqueakState * _state;
     TimeRequest _timeRequest;
     SetpointRequest _setpointRequest;
     TelemetryRequest _telemetryRequest;
@@ -100,8 +121,6 @@ class PipsqueakClient {
     Request * _requestQueue[REQUEST_QUEUE_DEPTH];
     size_t _requestQueueDepth;
     size_t _requestQueueCursor;
-    IPAddress _host;
-    uint16_t _port;
     bool _wiFiConnectionEstablished;
     AsyncClient _client;
     Request * _request;
@@ -115,6 +134,7 @@ class PipsqueakClient {
     volatile bool _timeoutDetected;
     volatile bool _disconnecting;
     volatile bool _disconnected;
+    char _rebootMessage[REPORT_REBOOT_REQUEST_MESSAGE_SIZE_LIMIT];
 
     void connect();
     void onConnect();
@@ -126,6 +146,7 @@ class PipsqueakClient {
     void endSession();
     void synchronizeClock();
     bool clockSyncRequired();
+    void prepareReportRebootRequest();
 };
 
 #endif // PipsqueakClient_h

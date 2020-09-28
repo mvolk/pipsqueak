@@ -33,7 +33,7 @@ void StatusEvent::error(
   _payload[STATUS_EVENT_ERROR_CODE_OFFSET] = errorCode;\
 }
 
-void StatusEvent::heaterCycle(
+void StatusEvent::heaterPulse(
   uint32_t timestamp,
   uint32_t pulseDuration,
   uint8_t percentPower,
@@ -47,7 +47,7 @@ void StatusEvent::heaterCycle(
   memcpy(&_payload[STATUS_EVENT_RECOVERY_DURATION_OFFSET], &recoveryDuration, 4);\
 }
 
-void StatusEvent::chillerCycle(
+void StatusEvent::chillerPulse(
   uint32_t timestamp,
   uint32_t pulseDuration,
   uint32_t recoveryDuration
@@ -62,6 +62,11 @@ void StatusEvent::chillerCycle(
 void StatusEvent::write(byte * buffer) {
   memcpy(buffer, _payload, STATUS_EVENT_SIZE);
   reset();
+}
+
+void StatusEvent::read(const byte * buffer) {
+  reset();
+  memcpy(_payload, buffer, STATUS_EVENT_SIZE);
 }
 
 void StatusEvent::reset() {
@@ -117,42 +122,23 @@ void TelemetryRequest::reset() {
   _buffer[TELEMETRY_REQUEST_COUNT_OFFSET] = _eventCount;
 }
 
-bool TelemetryRequest::addTemperatureEvent(uint32_t timestamp, float temperature) {
-  _statusEvent.temperatureObservation(timestamp, temperature);
-  return addEvent();
+bool TelemetryRequest::addStatusEvent(StatusEvent * statusEvent) {
+  if (!isReadyForMoreEvents()) return false;
+  if (_eventCount == 0) Request::setPopulated();
+  size_t offset = TELEMETRY_REQUEST_EVENTS_BUFFER_OFFSET + (_eventCount * TELEMETRY_REQUEST_EVENT_SIZE);
+  #ifdef DEBUG_TELEMETRY_PROTOCOL
+  Serial.printf("TelemetryRequest.addStatusEvent(...) at offset %u\n", offset);
+  #endif
+  statusEvent->write(&_buffer[offset]);
+  _eventCount += 1;
+  _buffer[TELEMETRY_REQUEST_COUNT_OFFSET] = _eventCount;
+  return true;
 }
 
-bool TelemetryRequest::addSetpointEvent(uint32_t timestamp, float temperature) {
-  _statusEvent.temperatureSetpoint(timestamp, temperature);
-  return addEvent();
-}
-
-bool TelemetryRequest::addErrorEvent(
-  uint32_t timestamp,
-  ErrorType errorType,
-  int8_t errorCode
-) {
-  _statusEvent.error(timestamp, errorType, errorCode);
-  return addEvent();
-}
-
-bool TelemetryRequest::addHeaterEvent(
-  uint32_t timestamp,
-  uint32_t pulseDuration,
-  uint8_t percentPower,
-  uint32_t recoveryDuration
-) {
-  _statusEvent.heaterCycle(timestamp, pulseDuration, percentPower, recoveryDuration);
-  return addEvent();
-}
-
-bool TelemetryRequest::addChillerEvent(
-  uint32_t timestamp,
-  uint32_t pulseDuration,
-  uint32_t recoveryDuration
-) {
-  _statusEvent.chillerCycle(timestamp, pulseDuration, recoveryDuration);
-  return addEvent();
+bool TelemetryRequest::isReadyForMoreEvents() {
+  if (_eventCount == TELEMETRY_REQUEST_EVENT_COUNT_LIMIT) return false;
+  if (isInFlight()) return false;
+  return true;
 }
 
 size_t TelemetryRequest::getSize() {
@@ -165,15 +151,4 @@ TelemetryResponse * TelemetryRequest::getResponse() {
 
 byte * TelemetryRequest::getBuffer() {
   return _buffer;
-}
-
-bool TelemetryRequest::addEvent() {
-  if (_eventCount == TELEMETRY_REQUEST_EVENT_COUNT_LIMIT) return false;
-  if (isInFlight()) return false;
-  if (_eventCount == 0) Request::setPopulated();
-  size_t offset = TELEMETRY_REQUEST_EVENTS_BUFFER_OFFSET + (_eventCount * TELEMETRY_REQUEST_EVENT_SIZE);
-  _statusEvent.write(&_buffer[offset]);
-  _eventCount += 1;
-  _buffer[TELEMETRY_REQUEST_COUNT_OFFSET] = _eventCount;
-  return true;
 }
