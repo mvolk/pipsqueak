@@ -23,9 +23,12 @@ PipsqueakState::PipsqueakState()
   _remoteTemperatureInitialized { false },
   _remoteTemperature { NAN },
   _statusEventQueueCursor { 0 },
-  _statusEventQueueDepth { 0 }
+  _statusEventQueueDepth { 0 },
+  _requestSuccessCursor { 0 }
+
 {
   memset(_statusEventQueue, 0, STATUS_EVENT_QUEUE_SIZE);
+  for (size_t i = 0; i < REQUEST_SUCCESS_QUEUE_SIZE; i++) _requestSuccess[i] = true;
 }
 
 void PipsqueakState::setup() {
@@ -100,6 +103,14 @@ bool PipsqueakState::isSafeToOperate() {
   if (!_remoteSensorDetected) return false;
   if (isnan(_remoteTemperature)) return false;
   return true;
+}
+
+bool PipsqueakState::isServerConnectionHealthy() {
+  size_t countOfFailures = 0;
+  for (size_t i = 0; i < REQUEST_SUCCESS_QUEUE_SIZE; i++) {
+    if (!_requestSuccess[i]) countOfFailures += 1;
+  }
+  return countOfFailures <= 1;
 }
 
 bool PipsqueakState::isClockSynchronized() {
@@ -238,6 +249,8 @@ void PipsqueakState::recordError(ErrorType errorType, int8_t errorCode) {
 }
 
 void PipsqueakState::recordErrors(Response * response) {
+  _requestSuccess[_requestSuccessCursor] = !response->hasErrors();
+  _requestSuccessCursor = (_requestSuccessCursor + 1) % (REQUEST_SUCCESS_QUEUE_SIZE);
   for (size_t i = 0; i < response->errorCount(); i++) {
     recordError(response->getErrorType(i), response->getErrorCode(i));
   }

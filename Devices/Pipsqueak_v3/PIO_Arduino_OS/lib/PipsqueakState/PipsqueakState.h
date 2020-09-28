@@ -12,6 +12,7 @@
 
 #define STATUS_EVENT_QUEUE_DEPTH_LIMIT 1024
 #define STATUS_EVENT_QUEUE_SIZE STATUS_EVENT_SIZE * STATUS_EVENT_QUEUE_DEPTH_LIMIT
+#define REQUEST_SUCCESS_QUEUE_SIZE 4
 
 #define INITIALIZATION_WINDOW_MILLIS 15000
 
@@ -47,6 +48,11 @@ class PipsqueakState {
      * disclaimers) to operate the heater or chiller.
      */
     bool isSafeToOperate();
+
+    /**
+     * Indicates whether requests are generally succeeding.
+     */
+    bool isServerConnectionHealthy();
 
     /**
      * Indicates whether the device's clock is sufficiently
@@ -182,6 +188,8 @@ class PipsqueakState {
     byte _statusEventQueue[STATUS_EVENT_QUEUE_SIZE];
     size_t _statusEventQueueCursor;
     size_t _statusEventQueueDepth;
+    bool _requestSuccess[REQUEST_SUCCESS_QUEUE_SIZE];
+    size_t _requestSuccessCursor;
 
     void enqueueStatusEvent();
     void advanceStatusEventQueueCursor();
