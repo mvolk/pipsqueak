@@ -33,7 +33,7 @@ void PipsqueakIndicators::loop() {
       redState = blink(BLINK_PATTERN_DOT_DASH);
     } else if (!_state->isRemoteSensorDetected() || isnan(_state->getRemoteTemperature())) {
       greenState = LOW;
-      greenState = blink(BLINK_PATTERN_DASH_DOT_DOT_DOT);
+      redState = blink(BLINK_PATTERN_DASH_DOT_DOT_DOT);
     }
 
     if (_state->getBoardTemperature() > _config->getBoardTemperatureLimit()) {
