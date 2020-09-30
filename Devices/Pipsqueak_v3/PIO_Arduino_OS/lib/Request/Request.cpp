@@ -1,7 +1,8 @@
 #include "Request.h"
 
-Request::Request(Hmac * hmac) : _populated { false }, _inFlight { false }
+Request::Request(Hmac * hmac, const char * name) : _populated { false }, _inFlight { false }
 {
+  _name = name;
   _hmac = hmac;
 }
 
@@ -36,6 +37,10 @@ time_t Request::getTimestamp() {
   time_t timestamp;
   memcpy(&timestamp, (void *) &getBuffer()[REQUEST_TIMESTAMP_OFFSET], 4);
   return timestamp;
+}
+
+const char * Request::getName() {
+  return _name;
 }
 
 void Request::initialize(byte * buffer, size_t bufferSize, uint8_t protocolID, uint32_t deviceID) {

@@ -45,8 +45,10 @@ class Response {
      * Hmac is taken as an argument so that the application need only
      * allocate a single Hmac class instance. This results in minor
      * savings in an application's memory allocation requirements.
+     *
+     * The optional name is included in debug/log statements.
      */
-    Response(Hmac * hmac);
+    Response(Hmac * hmac, const char * name = "Response");
 
     /**
      * Clears the state of this response.
@@ -142,6 +144,11 @@ class Response {
      */
     void setChallenge(uint32_t challenge);
 
+    /**
+     * Returns the name of this response for logging purposes.
+     */
+    const char * getName();
+
   protected:
     /**
      * ISR-invoked method that returns a reference to the volatile buffer
@@ -190,6 +197,7 @@ class Response {
 
   private:
     Hmac * _hmac;
+    const char * _name;
     uint32_t _challenge;
     volatile size_t _bytesReceived;
     size_t _errorCount;

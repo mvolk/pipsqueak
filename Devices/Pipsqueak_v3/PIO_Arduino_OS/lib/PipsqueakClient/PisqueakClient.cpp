@@ -78,7 +78,7 @@ void PipsqueakClient::loop() {
 
   if (_transmitting && _response->isComplete()) {
     #ifdef DEBUG_PIPSQUEAK_CLIENT
-    Serial.println("PipsqueakClient.loop(): response complete/ready");
+    Serial.printf("PipsqueakClient.loop(): %s complete/ready\n", _response->getName());
     #endif
     endSession();
   }
@@ -141,6 +141,13 @@ void PipsqueakClient::loop() {
       _state->recordErrors(_response);
       synchronizeClock();
       clockSyncIsRequired = clockSyncRequired();
+      #ifdef DEBUG_PIPSQUEAK_CLIENT
+      if (_response->hasErrors()) {
+        Serial.printf("PipsqueakClient.loop(): %s failed with %u errors\n", _request->getName(), _response->errorCount());
+      } else {
+        Serial.printf("PipsqueakClient.loop(): %s succeeded in %lu seconds\n", _request->getName(), _response->getElapsedTime());
+      }
+      #endif
       if (_response->hasErrors() && _request != &_timeRequest) {
         _request->failed();
         enqueue(_request);
@@ -173,7 +180,7 @@ void PipsqueakClient::loop() {
     if (count > 0) {
       #ifdef DEBUG_PIPSQUEAK_CLIENT
       Serial.printf("PipsqueakClient.loop(): added %u status events to TelemetryRequest\n", count);
-      Serial.println("PipsqueakClient.loop(): enqueuing a TelemetryRequest for transmission");
+      Serial.println("PipsqueakClient.loop(): auto-enqueuing a TelemetryRequest for transmission");
       #endif
       enqueue(&_telemetryRequest);
       yield();
@@ -183,19 +190,19 @@ void PipsqueakClient::loop() {
   if (_request == NULL) {
     if (clockSyncIsRequired) {
       #ifdef DEBUG_PIPSQUEAK_CLIENT
-      Serial.println("PipsqueakClient.loop(): staging a TimeRequest for transmission");
+      Serial.println("PipsqueakClient.loop(): auto-staging a TimeRequest for transmission");
       #endif
       _timeRequest.reset();
       _request = &_timeRequest;
       _response = _request->getResponse();
     } else if (_requestQueueDepth > 0) {
-      #ifdef DEBUG_PIPSQUEAK_CLIENT
-      Serial.println("PipsqueakClient.loop(): staging the next request for transmission");
-      #endif
       _request = _requestQueue[_requestQueueCursor];
       _response = _request->getResponse();
       _requestQueueCursor = (_requestQueueCursor + 1) % REQUEST_QUEUE_DEPTH;
       _requestQueueDepth -= 1;
+      #ifdef DEBUG_PIPSQUEAK_CLIENT
+      Serial.printf("PipsqueakClient.loop(): staging a %s for transmission\n", _request->getName());
+      #endif
     }
   }
 
@@ -226,12 +233,17 @@ ReportRebootRequest * PipsqueakClient::getReportRebootRequest() {
 bool PipsqueakClient::enqueue(Request * request) {
   if (_requestQueueDepth == REQUEST_QUEUE_DEPTH) return false;
   for (size_t i = _requestQueueCursor; i < _requestQueueDepth; i++) {
-    if (_requestQueue[i] == request) return false;
+    if (_requestQueue[i] == request) {
+      #ifdef DEBUG_PIPSQUEAK_CLIENT
+      Serial.printf("PipsqueakClient.enqueue(%s): rejected (already enqueued)\n", request->getName());
+      #endif
+      return false;
+    }
   }
   _requestQueue[(_requestQueueCursor + _requestQueueDepth) % REQUEST_QUEUE_DEPTH] = request;
   _requestQueueDepth += 1;
   #ifdef DEBUG_PIPSQUEAK_CLIENT
-  Serial.println("PipsqueakClient.enqueue(Request *): accepted");
+  Serial.printf("PipsqueakClient.enqueue(%s): accepted\n", request->getName());
   #endif
   return true;
 }
@@ -272,7 +284,7 @@ void ICACHE_RAM_ATTR PipsqueakClient::onConnect() {
 void PipsqueakClient::transmit() {
   if (!_request->ready(now(), RANDOM_REG32)) {
     #ifdef DEBUG_PIPSQUEAK_CLIENT
-    Serial.println("PipsqueakClient.transmit(): request not populated or otherwise unready to transmit");
+    Serial.printf("PipsqueakClient.transmit(): %s not populated or otherwise unready to transmit\n", _request->getName());
     #endif
     _response->reset();
     _response->addError(ErrorType::Pipsqueak, REQUEST_NOT_POPULATED);

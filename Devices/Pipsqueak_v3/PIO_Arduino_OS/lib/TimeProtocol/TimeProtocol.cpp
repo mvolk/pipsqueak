@@ -4,7 +4,7 @@
 
 // TimeResponse ////////////////////////////////////////////////////////////////////////////////////
 
-TimeResponse::TimeResponse(Hmac * hmac) : Response(hmac)
+TimeResponse::TimeResponse(Hmac * hmac) : Response(hmac, "TimeResponse")
 {
 }
 
@@ -27,7 +27,10 @@ uint8_t TimeResponse::getExpectedProtocol() {
 
 // TimeRequest ////////////////////////////////////////////////////////////////////////////////////
 
-TimeRequest::TimeRequest(uint32_t deviceID, Hmac * hmac) : Request(hmac), _response(hmac)
+TimeRequest::TimeRequest(uint32_t deviceID, Hmac * hmac)
+:
+  Request(hmac, "TimeRequest"),
+  _response(hmac)
 {
   Request::initialize(_buffer, TIME_REQUEST_SIZE, TIME_PROTOCOL_ID, deviceID);
   // There is nothing to populate - this request is "populated" when empty

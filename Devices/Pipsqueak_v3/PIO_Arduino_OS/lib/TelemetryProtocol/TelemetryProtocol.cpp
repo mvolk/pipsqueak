@@ -76,7 +76,7 @@ void StatusEvent::reset() {
 
 // TelemetryResponse /////////////////////////////////////////////////////////////////////
 
-TelemetryResponse::TelemetryResponse(Hmac * hmac) : Response(hmac)
+TelemetryResponse::TelemetryResponse(Hmac * hmac) : Response(hmac, "TelemetryResponse")
 {
 }
 
@@ -107,7 +107,7 @@ uint8_t TelemetryResponse::getExpectedProtocol() {
 
 TelemetryRequest::TelemetryRequest(uint32_t deviceID, Hmac * hmac)
   :
-  Request(hmac),
+  Request(hmac, "TelemetryRequest"),
   _eventCount { 0 },
   _response(hmac)
 {

@@ -2,7 +2,7 @@
 #include <Hmac.h>
 #include <Errors.h>
 
-Response::Response(Hmac * hmac)
+Response::Response(Hmac * hmac, const char * name)
   :
   _challenge { 0 },
   _bytesReceived { 0 },
@@ -12,6 +12,7 @@ Response::Response(Hmac * hmac)
   _elapsedTime { 0 }
 {
   _hmac = hmac;
+  _name = name;
 }
 
 void Response::reset() {
@@ -122,6 +123,10 @@ time_t Response::getElapsedTime() {
 void Response::setChallenge(uint32_t challenge) {
   _challenge = challenge;
   _inUse = true;
+}
+
+const char * Response::getName() {
+  return _name;
 }
 
 uint8_t Response::getProtocol() {

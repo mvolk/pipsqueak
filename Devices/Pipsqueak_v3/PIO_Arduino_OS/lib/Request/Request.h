@@ -41,10 +41,12 @@ class Request {
      * allocate a single Hmac class instance. This results in minor
      * savings in an application's memory allocation requirements.
      *
+     * The optional name is included in debug/log statements.
+     *
      * Derived classes must additionally invoke the static initialize
      * method.
      */
-    Request(Hmac * hmac);
+    Request(Hmac * hmac, const char * name = "Request");
 
     /**
      * Indicates whether request content has been populated.
@@ -182,6 +184,11 @@ class Request {
      */
     time_t getTimestamp();
 
+    /**
+     * Returns the name of this request for logging purposes.
+     */
+    const char * getName();
+
   protected:
     /**
      * Performs universal initialization actions. Unsets every byte in the buffer
@@ -196,6 +203,7 @@ class Request {
     void setPopulated();
 
   private:
+    const char * _name;
     bool _populated;
     bool _inFlight;
     Hmac * _hmac;

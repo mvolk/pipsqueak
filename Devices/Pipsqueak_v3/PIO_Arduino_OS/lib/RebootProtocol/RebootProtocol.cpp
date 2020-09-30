@@ -2,7 +2,7 @@
 
 // ReportRebootResponse //////////////////////////////////////////////////////////////////////////////
 
-ReportRebootResponse::ReportRebootResponse(Hmac * hmac) : Response(hmac)
+ReportRebootResponse::ReportRebootResponse(Hmac * hmac) : Response(hmac, "ReportRebootResponse")
 {
 }
 
@@ -27,7 +27,7 @@ uint8_t ReportRebootResponse::getExpectedProtocol() {
 
 ReportRebootRequest::ReportRebootRequest(uint32_t deviceID, Hmac * hmac)
   :
-  Request(hmac),
+  Request(hmac, "ReportRebootRequest"),
   _size { REPORT_REBOOT_REQUEST_BASE_SIZE },
   _messageSize { 0 },
   _response(hmac)

@@ -3,7 +3,7 @@
 
 // SetpointResponse //////////////////////////////////////////////////////////////////////////////
 
-SetpointResponse::SetpointResponse(Hmac * hmac) : Response(hmac)
+SetpointResponse::SetpointResponse(Hmac * hmac) : Response(hmac, "SetpointResponse")
 {
 }
 
@@ -32,7 +32,10 @@ uint8_t SetpointResponse::getExpectedProtocol() {
 
 // SetpointRequest ///////////////////////////////////////////////////////////////////////////////
 
-SetpointRequest::SetpointRequest(uint32_t deviceID, Hmac * hmac) : Request(hmac), _response(hmac)
+SetpointRequest::SetpointRequest(uint32_t deviceID, Hmac * hmac)
+:
+  Request(hmac, "SetpointRequest"),
+  _response(hmac)
 {
   Request::initialize(_buffer, SETPOINT_REQUEST_SIZE, SETPOINT_PROTOCOL_ID, deviceID);
   // This request has only an optional payload
