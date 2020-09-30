@@ -15,6 +15,9 @@
 // long on - short off - short on - short off
 #define BLINK_PATTERN_DASH_DOT_DOT_DOT 4
 
+// Un-comment for detailed debugging
+// #define DEBUG_PIPSQUEAK_INDICATORS
+
 class PipsqueakIndicators {
   public:
     PipsqueakIndicators(PipsqueakState * state);

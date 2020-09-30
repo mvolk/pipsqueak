@@ -160,6 +160,7 @@ float PipsqueakState::getBoardTemperature() {
 
 void PipsqueakState::setBoardTemperature(float temperature) {
   if (!_boardTemperatureInitialized) {
+     if (isnan(temperature)) return;
     _boardTemperatureInitialized = true;
   } else if (isnan(_boardTemperature) && isnan(temperature)) {
     return;
@@ -199,6 +200,7 @@ float PipsqueakState::getRemoteTemperature() {
 
 void PipsqueakState::setRemoteTemperature(float temperature) {
   if (!_remoteTemperatureInitialized) {
+    if (isnan(temperature)) return;
     _remoteTemperatureInitialized = true;
   } else if (isnan(_remoteTemperature) && isnan(temperature)) {
     return;
