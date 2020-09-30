@@ -15,6 +15,7 @@ PipsqueakClient::PipsqueakClient(PipsqueakState * pipsqueakState, Hmac * hmac)
   _requestQueueDepth { 0 },
   _requestQueueCursor { 0 },
   _wiFiConnectionEstablished { false },
+  _wiFiReconnecting { false },
   _client(),
   _request { NULL },
   _response { NULL },
@@ -50,15 +51,29 @@ void PipsqueakClient::setup() {
   enqueue(&_setpointRequest);
 
   // Initiate WiFi connection
+  WiFi.mode(WIFI_STA);
   WiFi.begin(_state->getConfig()->getWifiSSID(), _state->getConfig()->getWifiPassword());
-  WiFi.setAutoReconnect(true);
 }
 
 void PipsqueakClient::loop() {
   // Don't do anything until the WiFi connection is initially established
-  if (!_wiFiConnectionEstablished) {
+  if (!_wiFiConnectionEstablished || _wiFiReconnecting) {
     if (!WiFi.isConnected()) return;
+    _wiFiReconnecting = false;
     _wiFiConnectionEstablished = true;
+    #ifdef DEBUG_PIPSQUEAK_CLIENT
+    Serial.println("PipsqueakClient.loop(): WiFi connected");
+    #endif
+  } else if (!WiFi.isConnected()) {
+    #ifdef DEBUG_PIPSQUEAK_CLIENT
+    Serial.println("PipsqueakClient.loop(): WiFi connection lost; reconnecting");
+    #endif
+    // setAutoReconnect(true) has been unreliable - may be trying to use same channel?
+    _wiFiReconnecting = true;
+    _state->recordError(ErrorType::Pipsqueak, WIFI_CONNECTION_ERROR);
+    WiFi.disconnect();
+    delay(500);
+    WiFi.begin(_state->getConfig()->getWifiSSID(), _state->getConfig()->getWifiPassword());
   }
 
   if (_transmitting && _response->isComplete()) {

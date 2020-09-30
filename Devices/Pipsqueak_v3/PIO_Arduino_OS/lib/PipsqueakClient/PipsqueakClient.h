@@ -122,6 +122,7 @@ class PipsqueakClient {
     size_t _requestQueueDepth;
     size_t _requestQueueCursor;
     bool _wiFiConnectionEstablished;
+    bool _wiFiReconnecting;
     AsyncClient _client;
     Request * _request;
     Response * _response;
