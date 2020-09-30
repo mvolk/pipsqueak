@@ -180,9 +180,13 @@ void PipsqueakClient::loop() {
     if (count > 0) {
       #ifdef DEBUG_PIPSQUEAK_CLIENT
       Serial.printf("PipsqueakClient.loop(): added %u status events to TelemetryRequest\n", count);
-      Serial.println("PipsqueakClient.loop(): auto-enqueuing a TelemetryRequest for transmission");
       #endif
-      enqueue(&_telemetryRequest);
+      if (_request != &_telemetryRequest) {
+        #ifdef DEBUG_PIPSQUEAK_CLIENT
+        Serial.println("PipsqueakClient.loop(): auto-enqueuing a TelemetryRequest for transmission");
+        #endif
+        enqueue(&_telemetryRequest);
+      }
       yield();
     }
   }
@@ -231,9 +235,9 @@ ReportRebootRequest * PipsqueakClient::getReportRebootRequest() {
 }
 
 bool PipsqueakClient::enqueue(Request * request) {
-  if (_requestQueueDepth == REQUEST_QUEUE_DEPTH) return false;
-  for (size_t i = _requestQueueCursor; i < _requestQueueDepth; i++) {
-    if (_requestQueue[i] == request) {
+  if (_requestQueueDepth >= REQUEST_QUEUE_DEPTH) return false;
+  for (size_t i = _requestQueueCursor; i < (_requestQueueCursor + _requestQueueDepth); i++) {
+    if (_requestQueue[(i % REQUEST_QUEUE_DEPTH)] == request) {
       #ifdef DEBUG_PIPSQUEAK_CLIENT
       Serial.printf("PipsqueakClient.enqueue(%s): rejected (already enqueued)\n", request->getName());
       #endif
