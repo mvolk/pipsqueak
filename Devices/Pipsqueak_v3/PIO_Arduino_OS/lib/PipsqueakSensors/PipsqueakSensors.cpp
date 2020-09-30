@@ -30,7 +30,7 @@ void PipsqueakSensors::loop() {
     _state->setBoardTemperature(_boardSensor->getTemperature());
   }
   if (_remoteSensor->isReadyToRead() && _remoteSensor->read()) {
-    _state->setBoardTemperature(_remoteSensor->getTemperature());
+    _state->setRemoteTemperature(_remoteSensor->getTemperature());
   }
   if (!(_boardSensor->isSensing() || _remoteSensor->isSensing())) {
     if (_sensorToggle) {
