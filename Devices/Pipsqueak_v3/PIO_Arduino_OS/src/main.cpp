@@ -3,11 +3,13 @@
 #include <Hmac.h>
 #include <PipsqueakClient.h>
 #include <PipsqueakIndicators.h>
+#include <PipsqueakSensors.h>
 
 Hmac * hmac;
 PipsqueakState * state;
 PipsqueakClient * client;
 PipsqueakIndicators * indicators;
+PipsqueakSensors * sensors;
 
 void setup() {
   Serial.begin(57600);
@@ -25,6 +27,9 @@ void setup() {
   indicators = new PipsqueakIndicators(state);
   indicators->setup();
 
+  sensors = new PipsqueakSensors(state);
+  sensors->setup();
+
   // Enables powering up the control pins
   pinMode(state->getConfig()->getSignalEnablePin(), OUTPUT);
   digitalWrite(state->getConfig()->getSignalEnablePin(), HIGH);
@@ -34,4 +39,5 @@ void loop() {
   state->loop();
   client->loop();
   indicators->loop();
+  sensors->loop();
 }

@@ -51,6 +51,16 @@ This library encapsulates the following component libraries:
 * [TelemetryProtocol.h](./lib/TelemetryProtocol/README.md) - defines the
   TelemetryRequest and TelemetryResponse classes
 
+### [PipsqueakIndicators](./lib/PipsqueakIndicators/README.md)
+
+A simple library the controls the state of the green and red indicator LEDs to
+signal system status and health.
+
+### [PipsqueakSensors](./lib/PipsqueakSensors/README.md)
+
+Manages finding and taking readings from the onboard and remote DS18B20
+digital temperature ICs.
+
 ## Dependencies
 
 ### [Arduino.h](https://github.com/esp8266/Arduino/blob/master/cores/esp8266/Arduino.h)
