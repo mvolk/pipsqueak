@@ -61,6 +61,11 @@ signal system status and health.
 Manages finding and taking readings from the onboard and remote DS18B20
 digital temperature ICs.
 
+### [PipsqueakController](./lib/PipsqueakController/README.md)
+
+Regulates the temperature of the medium monitored by the Pipsqueak using peripheral
+heaters and chillers.
+
 ## Dependencies
 
 ### [Arduino.h](https://github.com/esp8266/Arduino/blob/master/cores/esp8266/Arduino.h)
