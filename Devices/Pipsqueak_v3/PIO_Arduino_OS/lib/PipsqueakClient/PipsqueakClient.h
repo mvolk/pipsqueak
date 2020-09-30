@@ -135,6 +135,7 @@ class PipsqueakClient {
     volatile bool _disconnecting;
     volatile bool _disconnected;
     char _rebootMessage[REPORT_REBOOT_REQUEST_MESSAGE_SIZE_LIMIT];
+    uint32_t _lastRequestAttemptTimestamp;
 
     void connect();
     void onConnect();
@@ -147,6 +148,7 @@ class PipsqueakClient {
     void synchronizeClock();
     bool clockSyncRequired();
     void prepareReportRebootRequest();
+    bool isRateLimited();
 };
 
 #endif // PipsqueakClient_h

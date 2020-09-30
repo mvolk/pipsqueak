@@ -26,7 +26,8 @@ PipsqueakClient::PipsqueakClient(PipsqueakState * pipsqueakState, Hmac * hmac)
   _errorCode { 0 },
   _timeoutDetected { false },
   _disconnecting { false },
-  _disconnected { false }
+  _disconnected { false },
+  _lastRequestAttemptTimestamp { 0 }
 {
   _state = pipsqueakState;
 }
@@ -183,7 +184,7 @@ void PipsqueakClient::loop() {
     }
   }
 
-  if (!_busy && _request != NULL) {
+  if (!_busy && _request != NULL && !isRateLimited()) {
     #ifdef DEBUG_PIPSQUEAK_CLIENT
     Serial.println("PipsqueakClient.loop(): connect()");
     #endif
@@ -230,6 +231,7 @@ void PipsqueakClient::connect() {
   _timeoutDetected = false;
   _disconnecting = false;
   _disconnected = false;
+  _lastRequestAttemptTimestamp = millis();
 
   if (!WiFi.isConnected()) {
     #ifdef DEBUG_PIPSQUEAK_CLIENT
@@ -347,6 +349,9 @@ bool PipsqueakClient::clockSyncRequired() {
       code == REQUEST_ERROR_CLOCK_SYNC_BEHIND ||
       code == REQUEST_ERROR_CLOCK_SYNC_AHEAD
     ) {
+      #ifdef DEBUG_PIPSQUEAK_CLIENT
+      Serial.println("PipsqueakClient.clockSyncRequired(): out of sync");
+      #endif
       _state->setClockSynchronized(false);
       return true;
     }
@@ -388,4 +393,9 @@ void PipsqueakClient::prepareReportRebootRequest() {
   Serial.printf("ReportExceptionRequest(): reset diagnostic = %s\n", _rebootMessage);
   #endif
   _reportRebootRequest.reportExceptionalReboot(_rebootMessage);
+}
+
+bool PipsqueakClient::isRateLimited() {
+  // Rate limit imposed here one request per second
+  return millis() - _lastRequestAttemptTimestamp < 1000;
 }
