@@ -44,6 +44,10 @@ void PipsqueakState::loop() {
     _overheated = false;
   }
 
+  if (!_wifiInitialized && WiFi.isConnected()) {
+    _wifiInitialized = true;
+  }
+
   if (!_systemInitialized) {
     if (
       _wifiInitialized &&
