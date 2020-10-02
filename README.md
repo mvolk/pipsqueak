@@ -3,6 +3,9 @@
 Pipsqueaks are small hobbiest IoT devices designed to monitor and control
 the temperature of hobby-scale fermentations.
 
+The current major hardware version is v3. See the
+[v3 Device README](./Devices/Pipsqueak_v3/README.md) for details.
+
 ## Disclaimer
 
 This is a hobby project. Use of any of the intellectual property in
@@ -72,8 +75,11 @@ constantly chatting with the server).
 
 ## Status
 
-### 2020-09-26
+### 2020-10-01
 
-Code and designs for v3 are being gradually added to this repository,
-starting with the device operating system code.
+Code and designs for v3 are being gradually added to this repository.
+Initialization, operating system, and wiping code has already been
+added. Hardware designs will follow soon, though the focus will soon
+shift to server application code.
+
 
