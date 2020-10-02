@@ -10,9 +10,23 @@ intended to be modest.
 
 ### [PIO_Arduino_OS](./PIO_Arduino_OS/README.md)
 
+The Pipsqueak v3 operating system. This is the program that is run on a Pipsqueak v3
+when it is in normal operation.
+
 ### [PIO_Arduino_Initializer](./PIO_Arduino_Initializer/README.md)
 
+Writes configuration settings to the non-volatile memory of a Pipsqueak v3 device.
+Typically flashed to a Pipsqueak v3 after a hardware test and prior to flashing
+the operating system.
+
 ### [PIO_Arduino_Wiper](./PIO_Arduino_Wiper/README.md)
+
+Clears non-volatile memory so that the device can be repurposed, re-homed, or
+recycled.
+
+### [PIO_Arduino_HardwareTest](./PIO_Arduino_HardwareTest/README.md)
+
+Basic smoke test for new hardware.
 
 ## Future Contents
 

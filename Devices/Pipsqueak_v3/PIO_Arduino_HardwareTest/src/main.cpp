@@ -1,23 +1,4 @@
-/**
- * This test exercises the switching hardware and indicators.
- *
- * Successful operation is visually determined:
- * - Green indicator on steady
- * - Repeating cycle of indications:
- *   - Red + Yellow
- *   - Yellow
- *   - Red + Yellow
- *   - Red
- *   - Red + Blue
- *   - Blue
- *   - Red + Blue
- *   - Red
- * - [Optional] Power module switching corresponding to
- *   yellow and blue indicator light illumination
- */
-
 #include <Arduino.h>
-#include <unity.h>
 
 const uint8_t ENABLE_PIN           PROGMEM = D1;
 const uint8_t ONE_WIRE_PIN         PROGMEM = D2;
@@ -30,10 +11,10 @@ uint8_t phase = 1;
 uint32_t cycle = 0;
 
 void setup() {
-  UNITY_BEGIN();
+  Serial.begin(57600);
 
-  pinMode(ENABLE_PIN, OUTPUT);
-  digitalWrite(ENABLE_PIN, LOW);
+  pinMode(BUILTIN_LED, OUTPUT);
+  digitalWrite(BUILTIN_LED, LOW);
 
   pinMode(RED_LED_PIN, OUTPUT);
   pinMode(GREEN_LED_PIN, OUTPUT);
@@ -42,8 +23,6 @@ void setup() {
 
   pinMode(ENABLE_PIN, OUTPUT);
   digitalWrite(ENABLE_PIN, HIGH);
-
-  UNITY_END();
 }
 
 void loop() {
@@ -53,10 +32,10 @@ void loop() {
   digitalWrite(HEATER_PIN, phase > 2 && cycle % 2 == 1 ? HIGH : LOW);
 
   if (phase == 10) {
+    Serial.println("Cycle #" + String(cycle) + "\n");
+    Serial.flush();
     cycle += 1;
   }
-
   phase = (phase % 10) + 1;
-
   delay(300);
 }
