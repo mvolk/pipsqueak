@@ -1,2 +1,10 @@
-.pio
+# IDE: VS Code
 .vscode
+
+# Embedded Development Framework: PlatformIO
+.pio
+
+# NodeJS
+node_modules
+dist
+

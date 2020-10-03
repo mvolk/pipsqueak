@@ -6,6 +6,9 @@ the temperature of hobby-scale fermentations.
 The current major hardware version is v3. See the
 [v3 Device README](./Devices/Pipsqueak_v3/README.md) for details.
 
+The server implementation is located in the [CiderServer](./CiderServer/README.md)
+folder.
+
 ## Disclaimer
 
 This is a hobby project. Use of any of the intellectual property in
