@@ -1,6 +1,6 @@
 import net from 'net';
 import pino from 'pino';
-import PipsqueakApp from '../apps/pipsqueak';
+import type PipsqueakApp from '../apps/pipsqueak';
 import type { Socket, Server } from 'net';
 import type { PipsqueakSession } from '../types';
 
@@ -9,19 +9,16 @@ export type Options = {
   socketTimeoutMs?: number;
 };
 
-const DEFAULTS = {
+const CONFIG = {
   maxConnections: 5,
   socketTimeoutMs: 1000,
 };
 
 const LOGGER = pino({ name: 'PipsqueakServer' });
 
-function createServer(options: Options = {}): Server {
-  const config = { ...DEFAULTS, ...options };
-  const app = new PipsqueakApp();
-
+function createServer(app: PipsqueakApp): Server {
   function handleConnection(socket: Socket): void {
-    socket.setTimeout(config.socketTimeoutMs);
+    socket.setTimeout(CONFIG.socketTimeoutMs);
 
     let session: PipsqueakSession | null = null;
 
@@ -47,7 +44,7 @@ function createServer(options: Options = {}): Server {
     });
 
     socket.on('timeout', () => {
-      socket.destroy(new Error(`Socket timeout (${config.socketTimeoutMs}ms)`));
+      socket.destroy(new Error(`Socket timeout (${CONFIG.socketTimeoutMs}ms)`));
     });
 
     socket.on('close', (hadError: boolean) => {
@@ -61,7 +58,7 @@ function createServer(options: Options = {}): Server {
     LOGGER.error(err);
   });
 
-  server.maxConnections = config.maxConnections;
+  server.maxConnections = CONFIG.maxConnections;
 
   return server;
 }
