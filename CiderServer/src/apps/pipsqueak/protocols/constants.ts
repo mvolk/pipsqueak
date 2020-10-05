@@ -1,0 +1,22 @@
+export { HMAC_LENGTH } from '../security/constants';
+export const HEADER_LENGTH = 32;
+
+export const REQUEST_PROTOCOL_ID_OFFSET = 0;
+export const REQUEST_DEVICE_ID_OFFSET = 1;
+export const REQUEST_TIMESTAMP_OFFSET = 5;
+export const REQUEST_CHALLENGE_OFFSET = 10;
+
+export const RESPONSE_PROTOCOL_ID_OFFSET = 0;
+export const RESPONSE_TIMESTAMP_OFFSET = 1;
+export const RESPONSE_STATUS_CODE_OFFSET = 9;
+export const RESPONSE_CHALLENGE_OFFSET = 10;
+
+export const STATUS_OK = 0x00;
+export const STATUS_MASK_TIMESTAMP_TOO_OLD = 0x01;
+export const STATUS_MASK_TIMESTAMP_IN_FUTURE = 0x02;
+export const STATUS_MASK_AUTHENTICITY_CHECK_FAILED = 0x04;
+export const STATUS_MASK_RATE_LIMITED = 0x08;
+export const STATUS_MASK_TOO_BIG = 0x10;
+export const STATUS_MASK_DEVICE_NOT_REGISTERED = 0x20;
+export const STATUS_MASK_BUSY = 0x40;
+export const STATUS_MASK_UNKNOWN_EVENT_TYPE = 0x80;

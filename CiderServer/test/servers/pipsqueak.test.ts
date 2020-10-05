@@ -20,7 +20,7 @@ function findListener(
 ): unknown {
   // @ts-ignore implicit any
   function match(args) {
-    return args[0] && args[0] == type;
+    return args[0] && args[0] === type;
   }
   // @ts-ignore overloaded function
   const call = eventEmitter.on.mock.calls.find(match);
@@ -31,10 +31,7 @@ describe('pipsqueak', () => {
   const mockNet = net as jest.Mocked<typeof net>;
   let mockServer: jest.Mocked<net.Server>;
   let mockSocket: jest.Mocked<net.Socket>;
-  let mockSession: PipsqueakSession = {
-    handleData: jest.fn(),
-    end: jest.fn(),
-  };
+  let mockSession: PipsqueakSession;
   let mockPipsqueakApp: jest.Mocked<PipsqueakApp>;
 
   beforeEach(() => {
@@ -42,6 +39,10 @@ describe('pipsqueak', () => {
     mockNet.createServer.mockReturnValue(mockServer);
     mockSocket = new net.Socket() as jest.Mocked<net.Socket>;
     mockPipsqueakApp = new PipsqueakApp() as jest.Mocked<PipsqueakApp>;
+    mockSession = {
+      handleData: jest.fn(),
+      end: jest.fn(),
+    } as PipsqueakSession;
   });
 
   describe('.createServer(pipsqueakApp)', () => {
