@@ -20,17 +20,11 @@ export interface DeviceWithKey extends Device {
 
 export type PipsqueakSessionState = {
   protocolID: number;
+  expectedRequestSize: number;
   deviceID?: number;
-  device?: DeviceWithKey;
   timestamp?: number;
   challenge?: number;
   statusCode: number;
   complete: boolean;
+  buffer?: Buffer;
 };
-
-export type PipsqueakMessageParser = (
-  buffer: Buffer,
-  message: PipsqueakSessionState,
-) =>
-  | { parser: PipsqueakMessageParser; buffer: Buffer }
-  | Promise<{ parser: PipsqueakMessageParser; buffer: Buffer }>;

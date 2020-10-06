@@ -1,16 +1,15 @@
 import computeHmac from '../security/computeHmac';
-import type { PipsqueakSessionState } from '../../../types';
 
 export default function setHmac(
-  buffer: Buffer,
-  contentLength: number,
-  state: PipsqueakSessionState,
+  responseBuffer: Buffer,
+  contentLengthExcludingHmac: number,
+  key: Buffer | undefined,
 ) {
-  if (state.device) {
+  if (key) {
     // for clarity... making the implicit explicit:
-    const hmacOffset = contentLength;
-    computeHmac(buffer, 0, contentLength, state.device.key).copy(
-      buffer,
+    const hmacOffset = contentLengthExcludingHmac;
+    computeHmac(responseBuffer, 0, contentLengthExcludingHmac, key).copy(
+      responseBuffer,
       hmacOffset,
     );
   }

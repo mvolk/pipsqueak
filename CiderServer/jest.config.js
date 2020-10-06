@@ -8,4 +8,7 @@ module.exports = {
   setupFiles: ['<rootDir>/test/setup/pino.ts'],
   clearMocks: true,
   restoreMocks: true,
+  collectCoverage: true,
+  collectCoverageFrom: ['<rootDir>/src/**/*.{ts,tsx}'],
+  coverageDirectory: '<rootDir>/coverage',
 };

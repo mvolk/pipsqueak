@@ -1,5 +1,4 @@
 import setHeader from '../../../../src/apps/pipsqueak/protocols/setHeader';
-import type { PipsqueakSessionState } from '../../../../src/types';
 
 describe('setHeader', () => {
   let realDateNow: () => number;
@@ -22,7 +21,7 @@ describe('setHeader', () => {
         protocolID: 42,
         statusCode,
         challenge: 19485294,
-      } as PipsqueakSessionState;
+      };
 
       const header = Buffer.alloc(32);
       setHeader(header, state);
@@ -39,7 +38,7 @@ describe('setHeader', () => {
       const state = {
         protocolID: 42,
         statusCode,
-      } as PipsqueakSessionState;
+      };
 
       const header = Buffer.alloc(32);
       setHeader(header, state);
