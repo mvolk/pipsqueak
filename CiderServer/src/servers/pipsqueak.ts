@@ -35,12 +35,17 @@ function createServer(app: PipsqueakApp): Server {
       if (session) {
         session.end();
       } else {
+        LOGGER.error('Received FIN before any data was received');
         socket.end();
       }
     });
 
     socket.on('error', (err) => {
-      if (!session) LOGGER.error(err);
+      if (session) {
+        session.error(err);
+      } else {
+        LOGGER.error(err);
+      }
     });
 
     socket.on('timeout', () => {
@@ -48,11 +53,15 @@ function createServer(app: PipsqueakApp): Server {
     });
 
     socket.on('close', (hadError: boolean) => {
-      if (hadError && !session) LOGGER.error('Socket closed with error');
+      if (session) {
+        session.close(hadError);
+      } else if (hadError) {
+        LOGGER.error('Socket closed with error');
+      }
     });
   }
 
-  const server = net.createServer(handleConnection);
+  const server = net.createServer({ allowHalfOpen: true }, handleConnection);
 
   server.on('error', (err) => {
     LOGGER.error(err);

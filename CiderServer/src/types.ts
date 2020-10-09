@@ -3,6 +3,8 @@ import type { Socket } from 'net';
 export type PipsqueakSession = {
   handleData(data: Buffer): void;
   end(): void;
+  error(err: any): void;
+  close(hadErrors: boolean): void;
 };
 
 export interface PipsqueakProtocol {
@@ -21,10 +23,11 @@ export interface DeviceWithKey extends Device {
 export type PipsqueakSessionState = {
   protocolID: number;
   expectedRequestSize: number;
+  request: Buffer;
+  statusCode: number;
   deviceID?: number;
   timestamp?: number;
   challenge?: number;
-  statusCode: number;
-  complete: boolean;
-  buffer?: Buffer;
+  device?: DeviceWithKey;
+  authentic?: boolean;
 };
