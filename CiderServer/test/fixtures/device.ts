@@ -36,6 +36,6 @@ export const key = Buffer.from([
 ]);
 
 export const deviceWithKey: DeviceWithKey = {
-  id: 1,
+  id: 127,
   key,
 };
