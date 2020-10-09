@@ -1,9 +1,7 @@
+import EntityNotFoundError from '../errors/EntityNotFoundError';
 import type { DeviceWithKey } from '../types';
 
 // stub
-export function getDeviceWithKey(
-  // @ts-ignore until no longer stubbed
-  deviceID: number,
-): Promise<DeviceWithKey | void> {
-  return Promise.resolve();
+export function getDeviceWithKey(deviceID: number): Promise<DeviceWithKey> {
+  return Promise.reject(new EntityNotFoundError('Device', deviceID));
 }

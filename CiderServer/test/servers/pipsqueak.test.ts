@@ -42,6 +42,8 @@ describe('pipsqueak', () => {
     mockSession = {
       handleData: jest.fn(),
       end: jest.fn(),
+      error: jest.fn(),
+      close: jest.fn(),
     } as PipsqueakSession;
   });
 
@@ -56,7 +58,7 @@ describe('pipsqueak', () => {
       beforeEach(() => {
         pipsqueak.createServer(mockPipsqueakApp);
         // @ts-ignore overloaded function + possibly undefined
-        connectionListener = mockNet.createServer.mock.calls[0][0];
+        connectionListener = mockNet.createServer.mock.calls[0][1];
       });
 
       test('sets socket timeout to 1000 ms', () => {
@@ -129,9 +131,23 @@ describe('pipsqueak', () => {
               endListener();
               expect(mockSession.end).toHaveBeenCalledTimes(1);
             });
+
+            test('does not emit a log message', () => {
+              expect(endListener).toBeDefined();
+              endListener();
+              expect(mocked(pino().error)).not.toHaveBeenCalled();
+            });
           });
 
           describe('socket error event listener', () => {
+            test('calls session.error(err)', () => {
+              const err = new Error();
+              expect(errorListener).toBeDefined();
+              errorListener(err);
+              expect(mockSession.error).toHaveBeenCalledTimes(1);
+              expect(mockSession.error).toHaveBeenCalledWith(err);
+            });
+
             test('does not emit a log message', () => {
               const err = new Error();
               expect(errorListener).toBeDefined();
@@ -156,6 +172,12 @@ describe('pipsqueak', () => {
             });
 
             describe('with hadError true', () => {
+              test('calls session.close(true)', () => {
+                closeListener(true);
+                expect(mockSession.close).toHaveBeenCalledTimes(1);
+                expect(mockSession.close).toHaveBeenCalledWith(true);
+              });
+
               test('does not emit a log message', () => {
                 closeListener(true);
                 expect(mocked(pino().error)).not.toHaveBeenCalled();
@@ -163,6 +185,12 @@ describe('pipsqueak', () => {
             });
 
             describe('with hadError false', () => {
+              test('calls session.close(false)', () => {
+                closeListener(false);
+                expect(mockSession.close).toHaveBeenCalledTimes(1);
+                expect(mockSession.close).toHaveBeenCalledWith(false);
+              });
+
               test('does not emit a log message', () => {
                 closeListener(false);
                 expect(mocked(pino().error)).not.toHaveBeenCalled();
@@ -172,6 +200,16 @@ describe('pipsqueak', () => {
         });
 
         describe('without an established session', () => {
+          describe('when createSession returns null', () => {
+            test('does not try to invoke handleData on the null session', () => {
+              mocked(mockPipsqueakApp.createSession).mockReturnValue(null);
+              const buffer = Buffer.from([]);
+              expect(() => {
+                dataListener(buffer);
+              }).not.toThrow();
+            });
+          });
+
           describe('socket data event listener', () => {
             test('invokes the PipsqueakApp.createSession method', () => {
               mocked(mockPipsqueakApp.createSession).mockReturnValue(

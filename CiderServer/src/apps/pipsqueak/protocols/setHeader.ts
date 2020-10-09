@@ -28,7 +28,7 @@ export default function setHeader(
     RESPONSE_PROTOCOL_ID_OFFSET,
   );
   responseBuffer.writeUInt32LE(
-    Math.round(Date.now() / 1000),
+    Math.floor(Date.now() / 1000),
     RESPONSE_TIMESTAMP_OFFSET,
   );
   responseBuffer.writeUInt8(

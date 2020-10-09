@@ -16,13 +16,11 @@ import type { PipsqueakSessionState } from '../../../types';
 | 10    | 13  | 4      | uint32 | challenge
 | 14    | 31  | 18     | ------ | use varies by protocol
 */
-export default function parseStandardHeader(
-  buffer: Buffer,
-  state: PipsqueakSessionState,
-) {
-  if (buffer.length >= HEADER_LENGTH) {
-    state.deviceID = buffer.readUInt32LE(REQUEST_DEVICE_ID_OFFSET);
-    state.timestamp = buffer.readUInt32LE(REQUEST_TIMESTAMP_OFFSET);
-    state.challenge = buffer.readUInt32LE(REQUEST_CHALLENGE_OFFSET);
+export default function parseStandardHeader(state: PipsqueakSessionState) {
+  const { request } = state;
+  if (request.length >= HEADER_LENGTH) {
+    state.deviceID = request.readUInt32LE(REQUEST_DEVICE_ID_OFFSET);
+    state.timestamp = request.readUInt32LE(REQUEST_TIMESTAMP_OFFSET);
+    state.challenge = request.readUInt32LE(REQUEST_CHALLENGE_OFFSET);
   }
 }
